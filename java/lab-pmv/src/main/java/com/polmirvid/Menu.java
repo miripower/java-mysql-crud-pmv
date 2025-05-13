@@ -75,7 +75,7 @@ public class Menu {
     }
 
     public void menu() {
-        System.out.println("SISTEMA DE GESTIÓN DE CATEGORÍAS Y PRODUCTOS");
+        System.out.println("\n\nSISTEMA DE GESTIÓN DE CATEGORÍAS Y PRODUCTOS");
         System.out.println("=============================================");
         System.out.println("\n-> Introduzca una opción de entre las siguientes\n");
         System.out.println("0: Salir");
@@ -182,16 +182,29 @@ public class Menu {
 
     public void insertarProducto() {
         System.out.println("\nINSERTAR NUEVO PRODUCTO");
-        System.out.print("Introduzca el nombre del producto: ");
-        String nombre = reader.nextLine();
-        System.out.print("Introduzca el precio del producto: ");
-        double precio = reader.nextDouble();
-        System.out.print("Introduzca el stock del producto: ");
-        int stock = reader.nextInt();
-        System.out.print("Introduzca el ID de la categoría: ");
-        int categoriaId = reader.nextInt();
 
         try {
+            List<Categoria> categorias = categoriaDao.getAll();
+            if (categorias.isEmpty()) {
+                System.out.println("No se pueden crear productos porque no hay categorías registradas.");
+                return;
+            }
+
+            // Mostrar las categorías disponibles
+            System.out.println("\nCATEGORÍAS DISPONIBLES:");
+            printCabeceraCategoria();
+            categorias.forEach(this::printCategoria);
+
+            // Solicitar datos del producto
+            System.out.print("\nIntroduzca el nombre del producto: ");
+            String nombre = reader.nextLine();
+            System.out.print("Introduzca el precio del producto: ");
+            double precio = reader.nextDouble();
+            System.out.print("Introduzca el stock del producto: ");
+            int stock = reader.nextInt();
+            System.out.print("Introduzca el ID de la categoría: ");
+            int categoriaId = reader.nextInt();
+
             Categoria categoria = categoriaDao.getById(categoriaId);
             if (categoria != null) {
                 Producto producto = new Producto(nombre, precio, stock, categoria);
@@ -254,7 +267,14 @@ public class Menu {
                 printProducto(producto);
                 System.out.println("\n");
 
-                System.out.printf("Introduzca el nuevo nombre del producto (%s): ", producto.getNombre());
+                // Mostrar las categorías disponibles
+                System.out.println("\nCATEGORÍAS DISPONIBLES:");
+                List<Categoria> categorias = categoriaDao.getAll();
+                printCabeceraCategoria();
+                categorias.forEach(this::printCategoria);
+
+                // Solicitar nuevos datos del producto
+                System.out.printf("\nIntroduzca el nuevo nombre del producto (%s): ", producto.getNombre());
                 String nuevoNombre = reader.nextLine();
                 nuevoNombre = (nuevoNombre.isBlank()) ? producto.getNombre() : nuevoNombre;
 
@@ -266,15 +286,22 @@ public class Menu {
                 int nuevoStock = reader.nextInt();
                 nuevoStock = (nuevoStock == 0) ? producto.getStock() : nuevoStock;
 
-                producto.setNombre(nuevoNombre);
-                producto.setPrecio(nuevoPrecio);
-                producto.setStock(nuevoStock);
+                System.out.print("Introduzca el nuevo ID de la categoría: ");
+                int categoriaId = reader.nextInt();
 
-                productoDao.update(producto);
+                Categoria categoria = categoriaDao.getById(categoriaId);
+                if (categoria != null) {
+                    producto.setNombre(nuevoNombre);
+                    producto.setPrecio(nuevoPrecio);
+                    producto.setStock(nuevoStock);
+                    producto.setCategoria(categoria);
 
-                System.out.println("Producto actualizado correctamente.");
+                    productoDao.update(producto);
+                    System.out.println("Producto actualizado correctamente.");
+                } else {
+                    System.out.println("Categoría no encontrada.");
+                }
             }
-
         } catch (SQLException e) {
             System.err.println("Error actualizando el producto: " + e.getMessage());
         }
@@ -304,34 +331,35 @@ public class Menu {
         }
     }
 
-    //Cabeceras
+    // Cabeceras
     private void printCabeceraCategoria() {
         System.out.printf("%2s %30s", "ID", "NOMBRE");
         System.out.println("");
         IntStream.range(1, 50).forEach(x -> System.out.print("-"));
-        System.out.println("\n");
+        System.out.println("");
     }
 
     private void printCabeceraProducto() {
         System.out.printf("%2s %30s %10s %8s %25s", "ID", "NOMBRE", "PRECIO", "STOCK", "CATEGORÍA");
         System.out.println("");
         IntStream.range(1, 100).forEach(x -> System.out.print("-"));
-        System.out.println("\n");
+        System.out.println("");
     }
 
-    //Imprimir
+    // Imprimir
     private void printCategoria(Categoria cat) {
         System.out.printf("%2s %30s\n",
-        cat.getIdCategoria(),
-        cat.getNombre());
+                cat.getIdCategoria(),
+                cat.getNombre());
     }
 
     private void printProducto(Producto producto) {
-        System.out.printf("%2s %30s %8.2f %10d\n",
+        System.out.printf("%2s %30s %8.2f %10d %25s\n",
                 producto.getIdProducto(),
                 producto.getNombre(),
                 producto.getPrecio(),
-                producto.getStock());
+                producto.getStock(),
+                producto.getCategoria() != null ? producto.getCategoria().getNombre() : "Sin categoría");
     }
 
     static class KeyboardReader {
