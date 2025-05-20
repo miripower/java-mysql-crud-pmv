@@ -149,6 +149,12 @@ public class Menu {
         System.out.println("--------------------------\n");
 
         try {
+            List<Producto> productos = productoDao.getAll();
+
+            //Mostrar productos disponibles
+            printCabeceraProducto();
+            productos.forEach(this::printProducto);
+
             System.out.print("Introduzca el ID del producto a buscar: ");
             int id = reader.nextInt();
 
